@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 namespace TinyKV.Client;
 
-public class KVStoreClient(string serverUrl)
+public class TinyKVClient(string serverUrl)
 {
     private readonly HubConnection _connection = new HubConnectionBuilder()
             .WithUrl(serverUrl)

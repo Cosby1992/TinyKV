@@ -6,7 +6,7 @@ class Program
 {
     static async Task Main()
     {
-        var client = new KVStoreClient("http://localhost:5009/tinykv");
+        var client = new TinyKVClient("http://localhost:5009/tinykv");
         await client.StartAsync();
 
         Console.WriteLine("Setting key 'key:1' to 'value:1'...");
