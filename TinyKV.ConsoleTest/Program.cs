@@ -1,44 +1,91 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using TinyKV.Client;
 
 class Program
 {
+    private static int setCount = 0;
+    private static int deleteCount = 0;
+    private static long totalSetTicks = 0;     // Total ticks for Set operations
+    private static long totalDeleteTicks = 0;  // Total ticks for Delete operations
+    private static object lockObj = new();    // Lock for updating time safely
+    private static readonly long TicksPerMillisecond = TimeSpan.TicksPerMillisecond;
+
     static async Task Main()
     {
         var client = new TinyKVClient("http://localhost:5009/tinykv");
         await client.StartAsync();
 
-        Console.WriteLine("Setting key 'key:1' to 'value:1'...");
-        await client.SetAsync("key:1", "value:1");
-        Console.WriteLine("Setting key 'key:2' to 'value:2'...");
-        await client.SetAsync("key:2", "value:2");
-        Console.WriteLine("Setting key 'key:3' to 'value:3'...");
-        await client.SetAsync("key:3", "value:3");
+        int maxKeys = 200_000;
+        int iterations = 200_000;
 
-        string value = await client.GetAsync("key:1");
-        Console.WriteLine($"Get('key:1') => {value}");
-        string value2 = await client.GetAsync("key:2");
-        Console.WriteLine($"Get('key:2') => {value2}");
-        string value3 = await client.GetAsync("key:3");
-        Console.WriteLine($"Get('key:3') => {value3}");
-        string noexist = await client.GetAsync("noexist");
-        Console.WriteLine($"Get('noexist') => {noexist}");
+        Console.WriteLine("Starting concurrent Set & Delete operations...");
 
-        await client.DeleteAsync("key:1");
-        Console.WriteLine("Deleted 'key:1'");
-        await client.DeleteAsync("key:2");
-        Console.WriteLine("Deleted 'key:2'");
+        // Start two parallel tasks
+        await Task.WhenAll(RunSetLoop(client, maxKeys, iterations), RunDeleteLoop(client, maxKeys, iterations));
 
-        string valueVerify = await client.GetAsync("key:1");
-        Console.WriteLine($"Get('key:1') => {valueVerify}");
-        string valueVerify2 = await client.GetAsync("key:2");
-        Console.WriteLine($"Get('key:2') => {valueVerify2}");
-        string valueVerify3 = await client.GetAsync("key:3");
-        Console.WriteLine($"Get('key:3') => {valueVerify3}");
-        string noexistvalueVerify = await client.GetAsync("noexist");
-        Console.WriteLine($"Get('noexist') => {noexistvalueVerify}");
+        // Ensure final console update after tasks are done
+        Console.SetCursorPosition(0, Console.CursorTop);
+        Console.WriteLine($"Progress: [SET: {setCount}/{iterations}]  [DELETE: {deleteCount}/{iterations}] ✅");
 
+        // Convert ticks to milliseconds
+        double totalSetTimeMs = (double)totalSetTicks / TicksPerMillisecond;
+        double totalDeleteTimeMs = (double)totalDeleteTicks / TicksPerMillisecond;
+        double avgSetTimeMs = setCount > 0 ? totalSetTimeMs / setCount : 0;
+        double avgDeleteTimeMs = deleteCount > 0 ? totalDeleteTimeMs / deleteCount : 0;
+
+        Console.WriteLine($"\nPerformance Metrics:");
+        Console.WriteLine($"- Total Set Time: {totalSetTimeMs:F2} ms");
+        Console.WriteLine($"- Total Delete Time: {totalDeleteTimeMs:F2} ms");
+        Console.WriteLine($"- Avg Set Time per Operation: {avgSetTimeMs:F6} ms");
+        Console.WriteLine($"- Avg Delete Time per Operation: {avgDeleteTimeMs:F6} ms");
+
+        Console.WriteLine("\nAll iterations completed.");
         Console.ReadLine();
+    }
+
+    static async Task RunSetLoop(TinyKVClient client, int maxKeys, int iterations)
+    {
+        for (int i = 0; i < iterations; i++)
+        {
+            int key = i % maxKeys;
+            string keyStr = $"key:{key}";
+            string valueStr = $"value:{key}";
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            await client.SetAsync(keyStr, valueStr);
+            stopwatch.Stop();
+
+            Interlocked.Increment(ref setCount); // ✅ Thread-safe update
+
+            // Update total time safely using Ticks
+            lock (lockObj)
+            {
+                totalSetTicks += stopwatch.ElapsedTicks;
+            }
+        }
+    }
+
+    static async Task RunDeleteLoop(TinyKVClient client, int maxKeys, int iterations)
+    {
+        for (int i = 0; i < iterations; i++)
+        {
+            int key = i % maxKeys;
+            string keyStr = $"key:{key}";
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            await client.DeleteAsync(keyStr);
+            stopwatch.Stop();
+
+            Interlocked.Increment(ref deleteCount); // ✅ Thread-safe update
+
+            // Update total time safely using Ticks
+            lock (lockObj)
+            {
+                totalDeleteTicks += stopwatch.ElapsedTicks;
+            }
+        }
     }
 }
