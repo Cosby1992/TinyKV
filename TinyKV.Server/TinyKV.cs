@@ -4,29 +4,25 @@ using Microsoft.Extensions.Caching.Memory;
 namespace TinyKV.Server;
 public class Store(IMemoryCache cache) : Hub
 {
-    private readonly IMemoryCache _cache = cache;
-
-    public Task<string> Get(string key)
-    {
-        _cache.TryGetValue(key, out string? value);
-        return Task.FromResult(value ?? "");
+    public string? Get(string key)
+    { 
+        cache.TryGetValue(key, out string? value);
+        return value;
     }
 
-    public async Task Set(string key, string value)
+    public void Set(string key, string value)
     {
-        _cache.Set(key, value);
-        await Clients.All.SendAsync("OnValueChanged", key, value);
+        _ = cache.Set(key, value);
     }
 
-    public async Task<bool> Has(string key)
+    public bool Has(string key)
     {
-        await Task.CompletedTask;
-        return _cache.TryGetValue(key, out _);
+        return cache.TryGetValue(key, out _);
     }
 
-    public Task<bool> Delete(string key)
+    public bool Delete(string key)
     {
-        _cache.Remove(key);
-        return Task.FromResult(true);
+        cache.Remove(key);
+        return true;
     }
 }
