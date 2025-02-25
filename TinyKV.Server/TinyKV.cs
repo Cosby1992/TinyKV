@@ -18,6 +18,12 @@ public class Store(IMemoryCache cache) : Hub
         await Clients.All.SendAsync("OnValueChanged", key, value);
     }
 
+    public async Task<bool> Has(string key)
+    {
+        await Task.CompletedTask;
+        return _cache.TryGetValue(key, out _);
+    }
+
     public Task<bool> Delete(string key)
     {
         _cache.Remove(key);
