@@ -13,4 +13,5 @@ public class TinyKVClient(string serverUrl)
     public async Task<string> GetAsync(string key) => await _connection.InvokeAsync<string>("Get", key);
     public async Task<bool> HasAsync(string key) => await _connection.InvokeAsync<bool>("Has", key);
     public async Task<bool> DeleteAsync(string key) => await _connection.InvokeAsync<bool>("Delete", key);
+    public async Task ClearAsync(string key) => await _connection.InvokeAsync<bool>("Clear", key);
 }
