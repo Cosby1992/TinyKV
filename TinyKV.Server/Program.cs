@@ -7,6 +7,6 @@ builder.Services.AddSignalR();
 var app = builder.Build();
 
 app.UseRouting();
-app.MapHub<Store>("/tinykv");
+app.MapHub<KVMemStore>("/tinykv");
 
 app.Run();

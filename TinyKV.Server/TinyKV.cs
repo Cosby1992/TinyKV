@@ -1,15 +1,18 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace TinyKV.Server;
-public class Store(IMemoryCache cache) : Hub
+public class KVMemStore() : Hub
 {
-    public string? Get(string key) => cache.TryGetValue(key, out string? value) ? value : null;
-    public void Set(string key, string value) => _ = cache.Set(key, value);
-    public bool Has(string key) => cache.TryGetValue(key, out _);
-    public bool Delete(string key)
-    {
-        cache.Remove(key);
-        return true;
+    private static readonly ConcurrentDictionary<string, string> _store = new();
+    
+    public Task<string?> Get(string key) => Task.FromResult(_store.TryGetValue(key, out string? value) ? value : null);
+    public Task Set(string key, string value) => Task.FromResult(_ = _store[key] = value);
+    public Task<bool> Has(string key) => Task.FromResult(_store.TryGetValue(key, out _));
+    public Task<bool> Delete(string key) => Task.FromResult(_store.TryRemove(key, out _));
+
+    public Task DeleteAllKeys() {
+        _store.Clear();
+        return Task.CompletedTask;
     }
 }
