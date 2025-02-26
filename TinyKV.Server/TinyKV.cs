@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace TinyKV.Server;
 public class KVMemStore() : Hub
 {
-    private static readonly ConcurrentDictionary<string, string> _store = new();
+    private static readonly ConcurrentDictionary<string, string> _store = new(Environment.ProcessorCount * 2, 200_000);
     
     public Task<string?> Get(string key) => Task.FromResult(_store.TryGetValue(key, out string? value) ? value : null);
     public Task Set(string key, string value) => Task.FromResult(_ = _store[key] = value);
