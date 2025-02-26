@@ -38,8 +38,9 @@ class Program
 
     static async Task RunSetLoop(TinyKVClient client, int maxKeys, int iterations)
     {
-        int batchSize = 100; // Tune this value for optimal throughput
-        var batchTasks = new List<Task>(batchSize);
+        int batchSize = 30000; // Tune for best performance
+        var batchData = new Dictionary<string, string>(batchSize);
+
         var stopwatch = new Stopwatch();
 
         for (int i = 0; i < iterations; i++)
@@ -48,23 +49,26 @@ class Program
             string keyStr = $"key:{key}";
             string valueStr = $"value:{key}";
 
-            stopwatch.Restart();
-            batchTasks.Add(client.SetAsync(keyStr, valueStr));
+            batchData[keyStr] = valueStr;
 
-            // Execute batch when full
-            if (batchTasks.Count >= batchSize)
+            if (batchData.Count >= batchSize)
             {
-                await Task.WhenAll(batchTasks); // Execute all in parallel
-                batchTasks.Clear();
-            }
+                stopwatch.Restart();
+                await client.SetBatchAsync(batchData); // Use batch call
+                stopwatch.Stop();
 
-            Interlocked.Increment(ref setCount);
-            Interlocked.Add(ref totalSetTicks, stopwatch.ElapsedTicks);
+                Interlocked.Add(ref totalSetTicks, stopwatch.ElapsedTicks);
+                Interlocked.Add(ref setCount, batchData.Count);
+                batchData.Clear();
+            }
         }
 
         // Final batch execution
-        if (batchTasks.Count > 0)
-            await Task.WhenAll(batchTasks);
+        if (batchData.Count > 0)
+        {
+            await client.SetBatchAsync(batchData);
+            Interlocked.Add(ref setCount, batchData.Count);
+        }
     }
 
 }
