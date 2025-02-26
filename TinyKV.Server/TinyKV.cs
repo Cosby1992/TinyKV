@@ -11,7 +11,7 @@ public class KVMemStore() : Hub
     public Task<bool> Has(string key) => Task.FromResult(_store.TryGetValue(key, out _));
     public Task<bool> Delete(string key) => Task.FromResult(_store.TryRemove(key, out _));
 
-    public Task DeleteAllKeys() {
+    public Task Clear() {
         _store.Clear();
         return Task.CompletedTask;
     }
