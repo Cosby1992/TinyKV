@@ -1,0 +1,8 @@
+services:
+  tinykvserver:
+    image: tinykvserver
+    build:
+      context: .
+      dockerfile: TinyKV.Server/Dockerfile
+    ports:
+      - 5009:5009
