@@ -4,10 +4,29 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- NuGet Metadata -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>TinyKV.Client</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Cosby</Authors>
+    <Description>A lightweight SignalR client for TinyKV, an in-memory key-value store.</Description>
+    <Copyright>Copyright (c) Cosby 2024</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Cosby1992/TinyKV</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>SignalR KeyValueStore DistributedCache</PackageTags>
+    <PackageProjectUrl>https://github.com/Cosby1992/TinyKV</PackageProjectUrl>
+    <PackageReleaseNotes>Initial release with single and batch operations.</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 
 </Project>
