@@ -1,28 +1,34 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Options;
-using TinyKV.Server;
 
-var builder = WebApplication.CreateBuilder(args);
+namespace TinyKV.Server;
 
-// Bind configuration sections to classes
-builder.Services.Configure<SignalRConfig>(builder.Configuration.GetSection("SignalR"));
-builder.Services.Configure<StoreConfig>(builder.Configuration.GetSection("Store"));
-
-builder.Services.AddSingleton(serviceProvider =>
+public class Program
 {
-    var storeConfig = serviceProvider.GetRequiredService<IOptions<StoreConfig>>().Value;
-    return new ConcurrentDictionary<string, string>(storeConfig.ConcurrencyLevel, storeConfig.InitialCapacity);
-});
+    public static WebApplication CreateApp(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSignalR(options =>
-{
-    var signalRConfig = builder.Configuration.GetSection("SignalR").Get<SignalRConfig>() ?? new SignalRConfig();
-    options.MaximumReceiveMessageSize = signalRConfig.MaximumReceiveMessageSize;
-});
+        builder.Services.Configure<SignalRConfig>(builder.Configuration.GetSection("SignalR"));
+        builder.Services.Configure<StoreConfig>(builder.Configuration.GetSection("Store"));
 
-var app = builder.Build();
+        builder.Services.AddSingleton(serviceProvider =>
+        {
+            var storeConfig = serviceProvider.GetRequiredService<IOptions<StoreConfig>>().Value;
+            return new ConcurrentDictionary<string, string>(storeConfig.ConcurrencyLevel, storeConfig.InitialCapacity);
+        });
 
-app.UseRouting();
-app.MapHub<KVMemStore>("/tinykv");
+        builder.Services.AddSignalR();
 
-app.Run();
+        var app = builder.Build();
+        app.UseRouting();
+        app.MapHub<KVMemStore>("/tinykv");
+
+        return app;
+    }
+
+    public static void Main(string[] args)
+    {
+        CreateApp(args).Run();
+    }
+}
