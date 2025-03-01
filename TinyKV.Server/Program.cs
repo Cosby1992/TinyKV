@@ -1,11 +1,23 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
 using TinyKV.Server;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton(new ConcurrentDictionary<string, string>(Environment.ProcessorCount * 2, 200_000));
+
+// Bind configuration sections to classes
+builder.Services.Configure<SignalRConfig>(builder.Configuration.GetSection("SignalR"));
+builder.Services.Configure<StoreConfig>(builder.Configuration.GetSection("Store"));
+
+builder.Services.AddSingleton(serviceProvider =>
+{
+    var storeConfig = serviceProvider.GetRequiredService<IOptions<StoreConfig>>().Value;
+    return new ConcurrentDictionary<string, string>(storeConfig.ConcurrencyLevel, storeConfig.InitialCapacity);
+});
+
 builder.Services.AddSignalR(options =>
 {
-    options.MaximumReceiveMessageSize = 1024 * 1024; // Increase to 1MB (default is 32KB)
+    var signalRConfig = builder.Configuration.GetSection("SignalR").Get<SignalRConfig>() ?? new SignalRConfig();
+    options.MaximumReceiveMessageSize = signalRConfig.MaximumReceiveMessageSize;
 });
 
 var app = builder.Build();
