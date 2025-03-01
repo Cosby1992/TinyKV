@@ -232,7 +232,7 @@ public class KVMemStoreTests
 
         await _store.SetBatch(batch);
 
-        var result = await _store.GetBatch(batch.Keys.ToList());
+        var result = await _store.GetBatch([.. batch.Keys]);
         Assert.Equal(10_000, result.Count);
     }
 }
